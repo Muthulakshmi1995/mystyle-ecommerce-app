@@ -58,7 +58,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+MYSTYLE_EMAIL_API_URL = os.getenv("MYSTYLE_EMAIL_API_URL", "")
+MYSTYLE_API_SECRET = os.getenv("MYSTYLE_API_SECRET", "")
+
+if MYSTYLE_EMAIL_API_URL and MYSTYLE_API_SECRET:
+    EMAIL_BACKEND = "store.email_backend.AppsScriptEmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
