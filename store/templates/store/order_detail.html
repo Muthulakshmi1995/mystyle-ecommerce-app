@@ -1,0 +1,220 @@
+
+{% extends 'store/base.html' %}
+
+{% block content %}
+
+<style>
+.tracking-card {
+    margin: 28px 0;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #e8e1dc;
+    border-radius: 14px;
+}
+
+.tracking-card h2 {
+    margin-bottom: 22px;
+}
+
+.tracking-step {
+    position: relative;
+    display: flex;
+    gap: 16px;
+    min-height: 76px;
+}
+
+.tracking-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 13px;
+    top: 29px;
+    height: calc(100% - 24px);
+    width: 2px;
+    background: #e5e0dc;
+}
+
+.tracking-step.done::after {
+    background: #722B3A;
+}
+
+.tracking-marker {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid #d5d0cc;
+    background: #f5f2ef;
+    color: #777;
+    font-size: 13px;
+    font-weight: bold;
+    z-index: 1;
+}
+
+.tracking-step.done .tracking-marker,
+.tracking-step.current .tracking-marker {
+    background: #722B3A;
+    color: #fff;
+    border-color: #722B3A;
+}
+
+.tracking-info {
+    padding-bottom: 22px;
+}
+
+.tracking-info strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.tracking-info small {
+    color: #777;
+}
+
+.tracking-step.pending .tracking-info {
+    opacity: 0.55;
+}
+
+.tracking-cancelled {
+    padding: 16px;
+    border-radius: 8px;
+    background: #fff0f0;
+    color: #a12d35;
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+    .tracking-card {
+        padding: 17px;
+    }
+}
+</style>
+
+<div class="sectionhead">
+    <div>
+        <p class="eyebrow">ORDER CONFIRMATION</p>
+        <h1>Order {{ order.order_number }}</h1>
+    </div>
+
+    <a class="btn" href="{% url 'orders' %}">My Orders</a>
+</div>
+
+<p>
+    Status: <b>{{ order.get_status_display }}</b> ·
+
+    {% if order.payment_method == 'cod' %}
+        Payment: <b>Cash on Delivery · Pay on delivery</b>
+    {% else %}
+        Payment: {{ order.payment_status|title }}
+    {% endif %}
+</p>
+
+<p>Placed {{ order.created_at|date:"d M Y, h:i A" }}</p>
+
+
+<!-- ORDER TRACKING -->
+
+<div class="tracking-card">
+
+    <h2>Track Your Order</h2>
+
+    {% if order.status == 'cancelled' %}
+
+        <div class="tracking-cancelled">
+            This order has been cancelled.
+        </div>
+
+    {% else %}
+
+        <div class="tracking-step {% if order.status == 'placed' %}current{% else %}done{% endif %}">
+            <div class="tracking-marker">
+                {% if order.status == 'placed' %}1{% else %}✓{% endif %}
+            </div>
+            <div class="tracking-info">
+                <strong>Order Placed</strong>
+                <small>Your order has been successfully received.</small>
+            </div>
+        </div>
+
+        <div class="tracking-step
+            {% if order.status == 'processing' %}current
+            {% elif order.status == 'shipped' or order.status == 'out_for_delivery' or order.status == 'delivered' %}done
+            {% else %}pending{% endif %}">
+
+            <div class="tracking-marker">
+                {% if order.status == 'processing' %}2
+                {% elif order.status == 'shipped' or order.status == 'out_for_delivery' or order.status == 'delivered' %}✓
+                {% else %}2{% endif %}
+            </div>
+
+            <div class="tracking-info">
+                <strong>Processing</strong>
+                <small>Your order is being prepared.</small>
+            </div>
+        </div>
+
+        <div class="tracking-step
+            {% if order.status == 'shipped' %}current
+            {% elif order.status == 'out_for_delivery' or order.status == 'delivered' %}done
+            {% else %}pending{% endif %}">
+
+            <div class="tracking-marker">
+                {% if order.status == 'shipped' %}3
+                {% elif order.status == 'out_for_delivery' or order.status == 'delivered' %}✓
+                {% else %}3{% endif %}
+            </div>
+
+            <div class="tracking-info">
+                <strong>Shipped</strong>
+                <small>Your package has been dispatched.</small>
+            </div>
+        </div>
+
+        <div class="tracking-step
+            {% if order.status == 'out_for_delivery' %}current
+            {% elif order.status == 'delivered' %}done
+            {% else %}pending{% endif %}">
+
+            <div class="tracking-marker">
+                {% if order.status == 'out_for_delivery' %}4
+                {% elif order.status == 'delivered' %}✓
+                {% else %}4{% endif %}
+            </div>
+
+            <div class="tracking-info">
+                <strong>Out for Delivery</strong>
+                <small>Your package is on its way to your address.</small>
+            </div>
+        </div>
+
+        <div class="tracking-step {% if order.status == 'delivered' %}current{% else %}pending{% endif %}">
+            <div class="tracking-marker">5</div>
+            <div class="tracking-info">
+                <strong>Delivered</strong>
+                <small>Your order has been delivered successfully.</small>
+            </div>
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- EXISTING ORDER DETAILS -->
+
+{% for i in order.items.all %}
+
+    <div class="cartrow">
+        <b>{{ i.product_name }} — Size: {{ i.size }} × {{ i.quantity }}</b>
+        <span>₹{{ i.unit_price }}</span>
+    </div>
+
+{% endfor %}
+
+<h2>Total ₹{{ order.total }}</h2>
+
+<p>Delivering to: {{ order.address }}</p>
+
+{% endblock %}

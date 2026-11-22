@@ -1,0 +1,1 @@
+{% extends 'store/base.html' %}{% block content %}<h1>Your Wishlist</h1><div class="products">{% for i in items %}{% include 'store/product_card.html' with p=i.product %}{% empty %}<p>No saved products yet.</p>{% endfor %}</div>{% endblock %}

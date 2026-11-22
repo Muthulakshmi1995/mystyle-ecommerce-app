@@ -1,0 +1,18 @@
+
+{% extends 'store/base.html' %}
+
+{% block content %}
+<div class="formbox">
+    <h1>Password Reset</h1>
+
+    <p>
+        Your request has been processed successfully.
+        If you requested a password reset, please check
+        your registered email for the reset link.
+        If you have already reset your password, you can
+        now log in using your new password.
+    </p>
+
+    <a class="btn" href="{% url 'login' %}">Back to Login</a>
+</div>
+{% endblock %}

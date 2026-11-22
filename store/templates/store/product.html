@@ -1,0 +1,254 @@
+{% extends 'store/base.html' %}
+{% block content %}
+
+<div class="detail">
+    <div>
+        <div class="detail-image">
+            <img
+                id="main-product-image"
+                src="{% if product.image %}{{ product.image.url }}{% endif %}"
+                alt="{{ product.name }}"
+            >
+        </div>
+    </div>
+
+    <div class="detail-info">
+        <p class="eyebrow">
+            {{ product.category.get_department_display }} /
+            {{ product.category.name }}
+        </p>
+
+        <h1>{{ product.name }}</h1>
+
+        <p>{{ product.brand }}</p>
+
+        <p class="rating">
+            ★
+            {% if product.average_rating %}
+                {{ product.average_rating }} / 5
+            {% else %}
+                No ratings yet
+            {% endif %}
+            · {{ reviews|length }} reviews
+        </p>
+
+        <h2>
+            ₹{{ product.price }}
+            <del>₹{{ product.mrp }}</del>
+            <span class="discounttext">
+                {{ product.discount_percent }}% off
+            </span>
+        </h2>
+
+        {% if product.deal_active %}
+            <p class="deal">
+                LIMITED TIME DEAL · Ends
+                {{ product.deal_ends_at|date:'d M, h:i A' }}
+            </p>
+        {% endif %}
+
+        <p class="stockline" id="stock-message">
+            {% if available_stock <= 5 and available_stock > 0 %}
+                Only {{ available_stock }} left in stock
+            {% elif available_stock == 0 %}
+                Currently unavailable
+            {% else %}
+                In stock · Ready to ship
+            {% endif %}
+        </p>
+
+        <p>{{ product.description }}</p>
+
+        <p>
+            <b>Material:</b>
+            {{ product.material|default:'Not specified' }}
+            ·
+            <b>Fit:</b>
+            {{ product.fit|default:'Regular' }}
+        </p>
+
+        <form
+            method="post"
+            action="{% url 'add_to_cart' 0 %}"
+            data-cart-url="{% url 'add_to_cart' 0 %}"
+            id="variant-cart-form"
+            class="variant-picker"
+        >
+            {% csrf_token %}
+
+            <button
+                class="btn add-main"
+                type="button"
+                id="open-variant-modal"
+            >
+                Add to Cart
+            </button>
+
+            <div class="variant-modal" id="variant-modal" hidden>
+                <div class="variant-modal-head">
+                    <div>
+                        <h3>Choose your size</h3>
+                        <p>Select one size to check availability.</p>
+                    </div>
+
+                    <button
+                        class="modal-close"
+                        type="button"
+                        id="close-variant-modal"
+                        aria-label="Close"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <h4>Size</h4>
+
+                <div class="size-row">
+                    {% for option in size_options %}
+                        <button
+                            type="button"
+                            class="size-option"
+                            data-size="{{ option.size }}"
+                            data-variant-id="{{ option.variant_id }}"
+                            data-stock="{{ option.stock }}"
+                            {% if option.stock < 1 %}disabled{% endif %}
+                        >
+                            {{ option.size }}
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <input
+                    type="hidden"
+                    name="variant_id"
+                    id="selected-variant-id"
+                >
+
+                <input
+                    type="hidden"
+                    name="next"
+                    value="{% url 'cart' %}"
+                >
+
+                <label class="quantity-label">
+                    Quantity
+                    <input
+                        type="number"
+                        name="quantity"
+                        min="1"
+                        value="1"
+                        max="10"
+                        id="product-quantity"
+                    >
+                </label>
+
+                <p class="variant-hint" id="variant-hint">
+                    Choose a size to check stock.
+                </p>
+
+                <button
+                    class="btn add-selected"
+                    type="submit"
+                    disabled
+                    id="add-to-cart-button"
+                >
+                    Add to Cart
+                </button>
+            </div>
+        </form>
+
+        <form
+            method="post"
+            action="{% url 'toggle_wishlist' product.id %}"
+            class="detail-wishlist"
+        >
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="next"
+                value="{{ request.path }}"
+            >
+
+            <button
+                class="btn secondary {% if product.id in wishlist_ids %}is-wishlisted{% endif %}"
+                type="submit"
+            >
+                {% if product.id in wishlist_ids %}
+                    ♥ Saved to Wishlist
+                {% else %}
+                    ♡ Add to Wishlist
+                {% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if recommended_products %}
+<section class="recommendations">
+    <div class="sectionhead">
+        <div>
+            <p class="eyebrow">DISCOVER MORE</p>
+            <h2>You May Also Like</h2>
+            <p class="muted">Explore more styles from this collection.</p>
+        </div>
+    </div>
+
+    <div class="products">
+        {% for p in recommended_products %}
+            {% include 'store/product_card.html' with p=p %}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section>
+    <h2>Customer reviews</h2>
+
+    {% if user.is_authenticated and not user.is_staff %}
+        <form
+            method="post"
+            action="{% url 'add_review' product.slug %}"
+            class="formbox"
+        >
+            {% csrf_token %}
+
+            <label>Rating (1–5)</label>
+            <input type="number" min="1" max="5" name="rating" required>
+
+            <input
+                name="title"
+                placeholder="Review title"
+                required
+            >
+
+            <textarea
+                name="body"
+                placeholder="Share your experience"
+                required
+            ></textarea>
+
+            <button class="btn">Submit review</button>
+        </form>
+    {% else %}
+        <p>
+            <a href="{% url 'login' %}">Login</a>
+            to write a review.
+        </p>
+    {% endif %}
+
+    {% for r in reviews %}
+        <div class="review">
+            <b>{{ r.title }} · {{ r.rating }} ★</b>
+            <p>{{ r.body }}</p>
+            <small>
+                By {{ r.user.username }} ·
+                {{ r.created_at|date:"d M Y" }}
+            </small>
+        </div>
+    {% empty %}
+        <p>Be the first to review this product.</p>
+    {% endfor %}
+</section>
+
+{% endblock %}

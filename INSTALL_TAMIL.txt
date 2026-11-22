@@ -1,0 +1,20 @@
+MYSTYLE - Remove customer-facing colour selection
+
+This is a SOURCE FILE PATCH only. It does NOT contain media, database, venv, or product images.
+
+Before replacing files:
+1. Stop Django server with Ctrl+C.
+2. Make a backup copy of your project folder, or at minimum back up these same source files.
+3. Extract this ZIP into the project root: MYSTYLE_Complete_Update.
+4. Choose Replace files when Windows asks.
+5. Run: python manage.py runserver
+6. In Chrome, press Ctrl+F5 and test a product page.
+
+What changes:
+- Product page no longer shows five colour swatches.
+- Customer chooses size only; stock availability is shown for that size.
+- Add to Cart still uses existing ProductVariant records internally (best-stocked record per size) to preserve your existing database and cart system.
+- Cart and Order detail show size only; they do not show colour.
+- No database migration is required.
+
+Do NOT delete media/variants or ProductVariant database rows. They are retained internally for compatibility and stock/cart references.

@@ -1,0 +1,35 @@
+
+{% extends 'store/base.html' %}
+
+{% block content %}
+<div class="formbox">
+    <h1>Contact MYSTYLE</h1>
+    <p>Questions about an order or product? Send us a message.</p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <input
+            type="text"
+            name="name"
+            placeholder="Your name"
+            required
+        >
+
+        <input
+            type="email"
+            name="email"
+            placeholder="Email address"
+            required
+        >
+
+        <textarea
+            name="message"
+            placeholder="How can we help?"
+            required
+        ></textarea>
+
+        <button type="submit" class="btn">Send Message</button>
+    </form>
+</div>
+{% endblock %}

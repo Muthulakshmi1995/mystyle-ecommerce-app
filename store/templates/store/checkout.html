@@ -1,0 +1,551 @@
+
+{% extends 'store/base.html' %}
+{% block content %}
+
+<style>
+.checkout-box {
+    max-width: 1120px !important;
+    width: calc(100% - 36px) !important;
+    box-sizing: border-box;
+    display: block;
+}
+
+.checkout-form {
+    width: 100%;
+}
+
+.checkout-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+    gap: 25px;
+    align-items: start;
+}
+
+.checkout-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.checkout-panel {
+    background: #ffffff;
+    border: 1px solid #e9e2df;
+    border-radius: 14px;
+    padding: 22px;
+    min-width: 0;
+}
+
+.checkout-panel h3,
+.checkout-summary-card h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
+.checkout-summary-card {
+    position: sticky;
+    top: 24px;
+    background: #fffdf8;
+    border: 1px solid #d8c2c5;
+    border-top: 4px solid #722b3a;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    min-width: 0;
+}
+
+.checkout-summary-card p {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 13px 0;
+}
+
+.checkout-summary-card .total-row {
+    padding-top: 15px;
+    border-top: 1px solid #e5dcda;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.checkout-summary-card .saving-message {
+    color: #477d55;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.checkout-summary-card .checkout-continue-btn {
+    width: 100%;
+    margin-top: 18px;
+}
+
+.checkout-summary-card label {
+    display: block;
+    margin-top: 22px;
+    font-weight: 600;
+}
+
+.checkout-summary-card .muted {
+    display: block;
+    line-height: 1.6;
+}
+
+.checkout-panel .checkout-apply-btn {
+    margin-top: 8px;
+}
+
+@media (max-width: 800px) {
+    .checkout-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-summary-card {
+        position: static;
+    }
+}
+
+@media (max-width: 480px) {
+    .checkout-box {
+        width: calc(100% - 20px) !important;
+    }
+
+    .checkout-panel,
+    .checkout-summary-card {
+        padding: 17px;
+    }
+}
+</style>
+
+<div class="formbox checkout-box">
+
+    <p class="eyebrow">ALMOST YOURS</p>
+    <h1>Checkout</h1>
+
+    {% if not addresses %}
+
+        <p>
+            Please add a shipping address in
+            <a href="{% url 'profile' %}">your profile</a> first.
+        </p>
+
+    {% else %}
+
+
+<form method="post" class="checkout-form">
+    {% csrf_token %}
+
+    <div class="checkout-layout">
+
+        <!-- LEFT SIDE -->
+        <div class="checkout-left">
+
+            <section class="checkout-panel">
+                <h3>Shipping Address</h3>
+
+                <label>Select Delivery Address</label>
+
+                <select name="address" required>
+                    {% for a in addresses %}
+                        <option value="{{ a.id }}"
+                            {% if a.is_default %}selected{% endif %}>
+                            {{ a.full_name }} — {{ a.line1 }},
+                            {{ a.city }} {{ a.postal_code }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </section>
+
+            <section class="checkout-panel">
+                <h3>Apply Coupon</h3>
+
+                <label>Coupon Code (Optional)</label>
+
+                <input
+                    name="coupon"
+                    placeholder="Enter coupon code"
+                    value="{{ coupon_code }}"
+                >
+
+                <p class="coupon-hint">
+                    MYSTYLE10 — Get 10% OFF on orders above ₹999.
+                </p>
+
+                {% if coupon_error %}
+                    <p class="muted">{{ coupon_error }}</p>
+                {% endif %}
+
+                <button
+                    class="btn checkout-apply-btn"
+                    type="submit"
+                    name="action"
+                    value="apply_coupon">
+                    Apply Coupon
+                </button>
+            </section>
+
+        </div>
+
+        <!-- RIGHT SIDE -->
+        <aside class="checkout-summary-card">
+
+            <h3>Order Summary</h3>
+
+            <p>
+                <span>Subtotal</span>
+                <strong>₹{{ subtotal|floatformat:2 }}</strong>
+            </p>
+
+            <p>
+                <span>Coupon Discount</span>
+
+                <strong>
+                    {% if discount %}
+                        -₹{{ discount|floatformat:2 }}
+                    {% else %}
+                        ₹0.00
+                    {% endif %}
+                </strong>
+            </p>
+
+            {% if coupon_applied %}
+                <p class="saving-message">
+                    You saved ₹{{ discount|floatformat:2 }}
+                    with {{ coupon_code }}!
+                </p>
+            {% endif %}
+
+            <p class="total-row">
+                <span>Total Amount</span>
+                <strong>₹{{ total|floatformat:2 }}</strong>
+            </p>
+
+            <label>Payment Method</label>
+
+            <select name="payment_method" required>
+                <option value="cod"
+                    {% if payment_method == 'cod' %}selected{% endif %}>
+                    Cash on Delivery
+                </option>
+
+                <option value="razorpay"
+                    {% if payment_method == 'razorpay' %}selected{% endif %}>
+                    Razorpay — Test Mode
+                </option>
+            </select>
+
+            <p class="muted">
+                Choose Cash on Delivery or Razorpay Test Mode.
+                Test Mode does not deduct real money.
+            </p>
+
+            <button
+                class="btn checkout-continue-btn"
+                type="submit"
+                name="action"
+                value="continue_payment">
+                Continue to Payment
+            </button>
+
+        </aside>
+
+    </div>
+</form>
+
+
+    {% endif %}
+
+</div>
+
+
+{% if coupon_applied %}
+
+<style>
+.coupon-success-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 17, 18, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 99999;
+    opacity: 0;
+    visibility: hidden;
+    transition: .3s ease;
+}
+
+.coupon-success-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.coupon-success-box {
+    position: relative;
+    background: #fffdf8;
+    width: 100%;
+    max-width: 420px;
+    padding: 36px 28px;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    transform: translateY(20px) scale(.96);
+    transition: .3s ease;
+}
+
+.coupon-success-overlay.show .coupon-success-box {
+    transform: translateY(0) scale(1);
+}
+
+.coupon-close {
+    position: absolute;
+    top: 13px;
+    right: 17px;
+    border: none;
+    background: none;
+    font-size: 25px;
+    color: #777;
+    cursor: pointer;
+}
+
+.coupon-check {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: #f3e6e8;
+    color: #722b3a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    margin: 0 auto 20px;
+}
+
+.coupon-success-box h2 {
+    color: #171414;
+    font-size: 25px;
+    margin: 0 0 12px;
+}
+
+.coupon-success-box p {
+    color: #6d6666;
+    line-height: 1.6;
+    margin: 8px 0;
+}
+
+.coupon-code-label {
+    display: inline-block;
+    margin: 15px 0;
+    padding: 10px 22px;
+    border: 1px dashed #722b3a;
+    border-radius: 8px;
+    background: #f8eff0;
+    color: #722b3a;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+}
+
+.coupon-saving {
+    font-size: 29px;
+    font-weight: 800;
+    color: #722b3a;
+    margin: 12px 0;
+}
+
+.coupon-continue {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 17px;
+    background: #722b3a;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.coupon-continue:hover {
+    background: #55202c;
+}
+
+@media (max-width: 480px) {
+    .coupon-success-box {
+        padding: 32px 20px;
+    }
+
+    .coupon-success-box h2 {
+        font-size: 22px;
+    }
+}
+</style>
+
+<div class="coupon-success-overlay"
+     id="couponSuccessPopup"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="couponPopupTitle"
+     aria-hidden="true">
+
+    <div class="coupon-success-box">
+
+        <button type="button"
+                class="coupon-close"
+                id="couponClose"
+                aria-label="Close popup">
+            &times;
+        </button>
+
+        <div class="coupon-check">✓</div>
+
+        <h2 id="couponPopupTitle">Congratulations!</h2>
+
+        <p>Your coupon has been applied successfully.</p>
+
+        <div class="coupon-code-label">
+            {{ coupon_code }}
+        </div>
+
+        <p>You saved</p>
+
+        <div class="coupon-saving">
+            ₹{{ discount|floatformat:2 }}
+        </div>
+
+        <p>Your discount has been added to your order total.</p>
+
+        <button type="button"
+                class="coupon-continue"
+                id="couponContinue">
+            Continue to Checkout
+        </button>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const popup = document.getElementById("couponSuccessPopup");
+    const closeButton = document.getElementById("couponClose");
+    const continueButton = document.getElementById("couponContinue");
+
+    function closeCouponPopup() {
+        popup.classList.remove("show");
+        popup.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+    }
+
+    popup.classList.add("show");
+    popup.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+
+    closeButton.addEventListener("click", closeCouponPopup);
+    continueButton.addEventListener("click", closeCouponPopup);
+
+    popup.addEventListener("click", function (event) {
+        if (event.target === popup) {
+            closeCouponPopup();
+        }
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && popup.classList.contains("show")) {
+            closeCouponPopup();
+        }
+    });
+});
+</script>
+
+{% endif %}
+
+
+{% if razorpay_order_id %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const options = {
+        key: "{{ razorpay_key_id|escapejs }}",
+        amount: "{{ razorpay_amount }}",
+        currency: "INR",
+        name: "MYSTYLE",
+        description: "MYSTYLE Order {{ order_number|escapejs }}",
+        order_id: "{{ razorpay_order_id|escapejs }}",
+
+        theme: {
+            color: "#800020"
+        },
+
+        handler: function (response) {
+
+            const data = new URLSearchParams();
+
+            data.append("razorpay_payment_id", response.razorpay_payment_id);
+            data.append("razorpay_order_id", response.razorpay_order_id);
+            data.append("razorpay_signature", response.razorpay_signature);
+            data.append("order_number", "{{ order_number|escapejs }}");
+
+            fetch("{% url 'razorpay_verify' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector(
+                        '[name=csrfmiddlewaretoken]'
+                    ).value,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: data
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    window.location.href = result.redirect_url;
+                } else {
+                    alert(result.message || "Payment verification failed.");
+                    window.location.href = "{% url 'checkout' %}";
+                }
+            })
+            .catch(() => {
+                alert("Unable to verify payment. Please contact support.");
+                window.location.href = "{% url 'orders' %}";
+            });
+        },
+
+        modal: {
+            ondismiss: function () {
+                window.location.href = "{% url 'checkout' %}";
+            }
+        }
+    };
+
+    const rzp = new Razorpay(options);
+
+    rzp.on("payment.failed", function (response) {
+        const data = new URLSearchParams();
+        data.append("order_number", "{{ order_number|escapejs }}");
+        data.append("error_code", response.error.code || "");
+        data.append("error_description", response.error.description || "");
+
+        fetch("{% url 'razorpay_failure' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": document.querySelector(
+                    '[name=csrfmiddlewaretoken]'
+                ).value,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: data
+        }).finally(function () {
+            alert("Payment failed. Please try again.");
+            window.location.href = "{% url 'checkout' %}";
+        });
+    });
+
+    rzp.open();
+});
+</script>
+{% endif %}
+
+{% endblock %}

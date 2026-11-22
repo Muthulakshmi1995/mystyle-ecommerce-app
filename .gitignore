@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.py[cod]
+db.sqlite3
+.env
+staticfiles/
+media/*
+!media/products/
+!media/products/**
+!media/variants/
+!media/variants/**
+
+# Local database backups
+*.sqlite3
+*.sqlite3-journal
+MYSTYLE_SAFETY_BACKUP/
+media_backup/
