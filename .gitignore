@@ -15,3 +15,5 @@ media/*
 *.sqlite3-journal
 MYSTYLE_SAFETY_BACKUP/
 media_backup/
+
+MYSTYLE_SAFETY_BACKUP/*.json
